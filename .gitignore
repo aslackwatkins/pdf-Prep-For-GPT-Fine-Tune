@@ -1,0 +1,5 @@
+constants.py
+text_data/
+pdf_data/
+.DS_Store
+prev_main.py
