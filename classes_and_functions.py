@@ -16,7 +16,6 @@ def get_file_names():
 
     for file in os.listdir(directory):
         list_of_files.append(os.fsdecode(file))
-    print(list_of_files)
     return list_of_files
 
 
@@ -55,10 +54,11 @@ class DocData():
         self.font_dict_occurances = {}
         self.titles_dict = {}
 
-        self.y_tollerance_list = []
-        self.x_tollerance_list = []
-        self.y_tollerance = 0
-        self.x_tollerance = 0
+        self.y_tolerance_list = []
+        self.x_tolerance_list = []
+        self.y_tolerance = 0
+        self.x_tolerance = 0
+        self.text_dict = {}
 
     def get_char_data(self):
         
@@ -78,8 +78,8 @@ class DocData():
                     last_doctop = item['doctop']
 
                 else:
-                    self.y_tollerance_list.append(abs(item['doctop'] - last_doctop))
-                    self.x_tollerance_list.append(abs(item['x0'] - last_x1))
+                    self.y_tolerance_list.append(abs(item['doctop'] - last_doctop))
+                    self.x_tolerance_list.append(abs(item['x0'] - last_x1))
 
     def get_font_occurances(self):
 
@@ -129,16 +129,12 @@ class DocData():
                     occurances = []
 
                     for o in range(0, font_size_occurance_count):
-                        print(self.font_dict_occurances)
-                        print(self.font_dict_occurances[font_keys_sorted[o]])
                         occurances.append(len(self.font_dict_occurances[font_keys_sorted[o]]))
 
                     index = occurances.index(max(occurances))
 
                     self.title_font.append(font_keys_sorted[index])
                     break
-        
-        print(self.title_font)
 
     def get_titles(self):
 
@@ -156,12 +152,12 @@ class DocData():
 
                         self.titles_dict[item['page_number']] += item['text']
     
-    def get_tollerances(self):
+    def get_tolerances(self):
         
-        x_sorted_data = sorted(self.x_tollerance_list)
+        x_sorted_data = sorted(self.x_tolerance_list)
         x_gaps = [y - x for x, y in zip(x_sorted_data[:-1], x_sorted_data[1:])]
         x_lists = []
-        y_sorted_data = sorted(self.y_tollerance_list)
+        y_sorted_data = sorted(self.y_tolerance_list)
         y_gaps = [y - x for x, y in zip(y_sorted_data[:-1], y_sorted_data[1:])]
         y_lists = []
 
@@ -178,7 +174,7 @@ class DocData():
         else:
             x_lists = [[0.0]]
         
-        self.x_tollerance = math.ceil(x_lists[0][-1])
+        self.x_tolerance = x_lists[0][-1]
 
         if len(y_gaps) > 1 and mean(y_gaps) != 0:
             y_stdev = stdev(y_gaps)
@@ -194,17 +190,21 @@ class DocData():
             y_lists = [[0.0]]
         
         if len(y_lists) > 1:
-            self.y_tollerance = math.ceil(y_lists[1][0])
+            self.y_tolerance = y_lists[1][0]
 
         else:
-            self.y_tollerance = math.ceil(y_lists[0][-1])
+            self.y_tolerance = y_lists[0][-1]
 
     def get_text(self):
 
         for num in range(self.starting_page, self.doc_length):
             current_page = self.pdf.pages[num]
 
-            return current_page.extract_text(x_tollerance = self.x_tollerance, y_tollerance = self.y_tollerance, layout = False)
+            
+            
+            self.text_dict[num] = current_page.extract_text(x_tolerance = self.x_tolerance, 
+                                                            y_tolerance = self.y_tolerance, 
+                                                            layout = False)
 
 
 
