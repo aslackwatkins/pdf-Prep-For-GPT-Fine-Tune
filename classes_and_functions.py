@@ -1,5 +1,8 @@
 import os
+import math
 import pdfplumber
+
+from statistics import stdev, mean
 
 
 
@@ -46,20 +49,37 @@ class DocData():
         self.starting_page = starting_page
         self.doc_length = len(self.pdf.pages)
         self.metadata = self.pdf.metadata
+
         self.title_font = []
         self.font_dict_sizes = {}
         self.font_dict_occurances = {}
         self.titles_dict = {}
 
-    def get_font_data(self):
+        self.y_tollerance_list = []
+        self.x_tollerance_list = []
+        self.y_tollerance = 0
+        self.x_tollerance = 0
+
+    def get_char_data(self):
         
         for num in range(self.starting_page,self.doc_length):
             current_page = self.pdf.pages[num].chars
+
+            last_x1 = 0.0
+            last_doctop = 0.0
 
             for item in current_page:
                 
                 if item['fontname'] not in self.font_dict_sizes:
                     self.font_dict_sizes[item['fontname']] = round(item['size'])
+
+                if last_x1 == 0.0 or last_doctop == 0.0:
+                    last_x1 = item['x1']
+                    last_doctop = item['doctop']
+
+                else:
+                    self.y_tollerance_list.append(abs(item['doctop'] - last_doctop))
+                    self.x_tollerance_list.append(abs(item['x0'] - last_x1))
 
     def get_font_occurances(self):
 
@@ -135,11 +155,59 @@ class DocData():
                         self.titles_dict[item['page_number']] = ''
 
                         self.titles_dict[item['page_number']] += item['text']
+    
+    def get_tollerances(self):
+        
+        x_sorted_data = sorted(self.x_tollerance_list)
+        x_gaps = [y - x for x, y in zip(x_sorted_data[:-1], x_sorted_data[1:])]
+        x_lists = []
+        y_sorted_data = sorted(self.y_tollerance_list)
+        y_gaps = [y - x for x, y in zip(y_sorted_data[:-1], y_sorted_data[1:])]
+        y_lists = []
+
+        if len(x_gaps) > 1:
+            x_stdev = stdev(x_gaps)  
+            x_lists = [[x_sorted_data[0]]]
+
+            for x in x_sorted_data[1:]:
+
+                if (x - x_lists[-1][-1]) / x_stdev > 1:
+                    x_lists.append([])
+
+                x_lists[-1].append(x)
+        else:
+            x_lists = [[0.0]]
+        
+        self.x_tollerance = math.ceil(x_lists[0][-1])
+
+        if len(y_gaps) > 1 and mean(y_gaps) != 0:
+            y_stdev = stdev(y_gaps)
+            y_lists = [[y_sorted_data[0]]]
+
+            for y in y_sorted_data[1:]:
+
+                if (y - y_lists[-1][-1]) / y_stdev > 1:
+                    y_lists.append([])
+
+                y_lists[-1].append(y)
+        else:
+            y_lists = [[0.0]]
+        
+        if len(y_lists) > 1:
+            self.y_tollerance = math.ceil(y_lists[1][0])
+
+        else:
+            self.y_tollerance = math.ceil(y_lists[0][-1])
+
+    def get_text(self):
+
+        for num in range(self.starting_page, self.doc_length):
+            current_page = self.pdf.pages[num]
+
+            return current_page.extract_text(x_tollerance = self.x_tollerance, y_tollerance = self.y_tollerance, layout = False)
 
 
-            
-#to-dos
-#remove logic for multiple title fonts, and just make it the title font that occurs the most
+
 
 
 
