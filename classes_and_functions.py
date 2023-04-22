@@ -60,6 +60,7 @@ class DocData():
         self.x_tolerance = 0
         self.text_dict = {}
 
+
     def get_char_data(self):
         
         for num in range(self.starting_page,self.doc_length):
@@ -81,6 +82,7 @@ class DocData():
                     self.y_tolerance_list.append(abs(item['doctop'] - last_doctop))
                     self.x_tolerance_list.append(abs(item['x0'] - last_x1))
 
+
     def get_font_occurances(self):
 
         for num in range(self.starting_page,self.doc_length):
@@ -93,6 +95,7 @@ class DocData():
                 elif item['fontname'] not in self.font_dict_occurances:
                     self.font_dict_occurances[item['fontname']] = [num]
     
+
     def get_title_fonts(self):
         
         font_keys_sorted = []
@@ -136,6 +139,7 @@ class DocData():
                     self.title_font.append(font_keys_sorted[index])
                     break
 
+
     def get_titles(self):
 
         for num in range(self.starting_page, self.doc_length):
@@ -152,6 +156,7 @@ class DocData():
 
                         self.titles_dict[item['page_number']] += item['text']
     
+
     def get_tolerances(self):
         
         x_sorted_data = sorted(self.x_tolerance_list)
@@ -174,7 +179,7 @@ class DocData():
         else:
             x_lists = [[0.0]]
         
-        self.x_tolerance = x_lists[0][-1]
+        self.x_tolerance = x_lists[0][0]
 
         if len(y_gaps) > 1 and mean(y_gaps) != 0:
             y_stdev = stdev(y_gaps)
@@ -189,11 +194,8 @@ class DocData():
         else:
             y_lists = [[0.0]]
         
-        if len(y_lists) > 1:
-            self.y_tolerance = y_lists[1][0]
+        self.y_tolerance = y_lists[0][0]
 
-        else:
-            self.y_tolerance = y_lists[0][-1]
 
     def get_text(self):
 
@@ -202,16 +204,20 @@ class DocData():
 
             
             
-            self.text_dict[num] = current_page.extract_text(x_tolerance = self.x_tolerance, 
+            word_list = current_page.extract_words(x_tolerance = self.x_tolerance, 
                                                             y_tolerance = self.y_tolerance, 
-                                                            layout = False)
-
-
-
-
-
-
-
-
+                                                            keep_blank_chars = True,
+                                                            use_text_flow = True,
+                                                            expand_ligatures = True)
             
-            
+            self.text_dict[num] = ''
+
+            for word in word_list:
+
+                self.text_dict[num] += word['text']
+
+
+    def clean_text(self):
+
+        for num in range(self.starting_page, self.doc_length):
+            self.text_dict[num].replace("", "")

@@ -24,5 +24,7 @@ for name in pdf_file_name_list:
 
     doc_data.get_text()
 
+    doc_data.clean_text()
+
     print(doc_data.titles_dict)
-    print(doc_data.text_dict[5])
+    print(doc_data.text_dict)
