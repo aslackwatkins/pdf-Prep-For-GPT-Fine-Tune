@@ -22,25 +22,6 @@ def get_file_names():
 
 
 
-class FileClass():
-
-    def __init__(self, file_name, file_type):
-        self.file_name = file_name
-        self.file_type = file_type
-
-    def write(self,text):
-
-        with open(f"{self.file_name}+{self.file_type}", "a") as file:
-            file.write(text)
-        file.close()
-
-    def read(self,starting_line,exclusive_end):
-        with open(f"{self.file_name}+{self.file_type}", "r") as file:
-            file.read()[starting_line,exclusive_end]
-        file.close()
-
-
-
 class DocData():
     
     def __init__(self,file_name,starting_page,pdf_directory):
