@@ -1,7 +1,7 @@
 import json
 import codecs
 
-from classes_and_functions import get_file_names, FileClass, DocData
+from classes_and_functions import get_file_names, DocData
 
 import constants as cst
 
