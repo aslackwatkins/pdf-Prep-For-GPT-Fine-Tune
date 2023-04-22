@@ -50,22 +50,16 @@ for name in pdf_file_name_list:
         prepared_dictionaries.append(current_dictionary)
 
 
-    with open("training_data.txt", "a") as text_file:
+    with open("training_data.JSONL", "a") as json_file:
+        line_number = 1
 
         for item in prepared_dictionaries:
+            json_object = json.dumps(item)
+            
+            if line_number == 1:
+                json_file.write(json_object)
+                line_number += 1
 
-            text_file.write(str(item) + "\n")
-
-    with open("training_data.txt", "r") as text_file:
-        with open("training_data.jsonl", "a") as json_file:
-            line_number = 1
-
-            for line in text_file:
-                json_object = json.dumps(line)
-                if line_number == 1:
-                    json_file.write(json_object)
-                    line_number += 1
-
-                else:
-                    json_file.write("\n" + json_object)
-                    line_number += 1
+            else:
+                json_file.write("\n" + json_object)
+                line_number += 1
