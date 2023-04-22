@@ -61,4 +61,4 @@ for name in pdf_file_name_list:
             for line in text_file:
                 json_object = json.dumps(line)
 
-                json_file.write(json_object + "\n")
+                json_file.write("\n" + json_object)
