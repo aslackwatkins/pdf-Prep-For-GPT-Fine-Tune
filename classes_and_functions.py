@@ -1,6 +1,7 @@
 import os
 import math
 import pdfplumber
+import codecs
 
 from statistics import stdev, mean
 
@@ -221,3 +222,42 @@ class DocData():
 
         for num in range(self.starting_page, self.doc_length):
             self.text_dict[num].replace("", "")
+            encoded = codecs.encode(self.text_dict[num], "utf-8", errors="ignore")
+            decoded = codecs.decode(encoded, "utf-8", errors="ignore")
+            decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
+            self.text_dict[num] = decoded
+
+            if num in self.titles_dict:
+                title_encoded = codecs.encode(self.titles_dict[num], "utf-8", errors="ignore")
+                title_decoded = codecs.decode(title_encoded, "utf-8", errors="ignore")
+                title_decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
+                self.titles_dict[num] = title_decoded
+
+
+    def return_text(self):
+        packaged = []
+
+        for num in range(self.starting_page, self.doc_length):
+            
+            title_key_list = self.titles_dict.keys()
+            current_package = []
+            current_title = ""
+
+            for i in title_key_list:
+                if i <= num:
+                    current_title = self.titles_dict[i]
+
+            current_package.append(current_title)
+            current_package.append(self.text_dict[num])
+
+            packaged.append(current_package)
+
+        return packaged
+            
+
+            
+
+            
+
+
+
