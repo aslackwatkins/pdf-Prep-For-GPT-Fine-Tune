@@ -2,6 +2,7 @@ import os
 import math
 import pdfplumber
 import codecs
+import re
 
 from statistics import stdev, mean
 
@@ -224,14 +225,19 @@ class DocData():
             self.text_dict[num].replace("", "")
             encoded = codecs.encode(self.text_dict[num], "utf-8", errors="ignore")
             decoded = codecs.decode(encoded, "utf-8", errors="ignore")
-            decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
-            self.text_dict[num] = decoded
+            replaced = decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
+            self.text_dict[num] = replaced
 
             if num in self.titles_dict:
                 title_encoded = codecs.encode(self.titles_dict[num], "utf-8", errors="ignore")
                 title_decoded = codecs.decode(title_encoded, "utf-8", errors="ignore")
-                title_decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
-                self.titles_dict[num] = title_decoded
+                title_replaced = title_decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
+                regularex = re.finditer(r"\\w[.]\\s", title_replaced)
+                for item in regularex:
+                    span = item.span()
+                    text = title_replaced[span[0],span[1]]
+                    title_replaced.replace(text, "")
+                self.titles_dict[num] = title_replaced
 
 
     def return_text(self):

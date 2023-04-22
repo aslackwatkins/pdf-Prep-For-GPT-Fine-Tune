@@ -39,7 +39,7 @@ for name in pdf_file_name_list:
     for item in current_doc_content:
         current_dictionary = {"prompt": "", "completion": ""}
         
-        if item[0] == "":
+        if len(item[0]) < 4:
             current_dictionary["prompt"] += f"What did {org_name} give as their policy position in their {name} document?"
         
         else:
@@ -50,10 +50,15 @@ for name in pdf_file_name_list:
         prepared_dictionaries.append(current_dictionary)
 
 
-    with open("training_data.txt", "a") as json_file:
+    with open("training_data.txt", "a") as text_file:
 
         for item in prepared_dictionaries:
 
-            json_object = json.dumps(item)
+            text_file.write(str(item) + "\n")
 
-            json_file.write(json_object + "\n")
+    with open("training_data.txt", "r") as text_file:
+        with open("training_data.jsonl", "a") as json_file:
+            for line in text_file:
+                json_object = json.dumps(line)
+
+                json_file.write(json_object + "\n")
