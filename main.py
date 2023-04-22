@@ -58,7 +58,14 @@ for name in pdf_file_name_list:
 
     with open("training_data.txt", "r") as text_file:
         with open("training_data.jsonl", "a") as json_file:
+            line_number = 1
+
             for line in text_file:
                 json_object = json.dumps(line)
+                if line_number == 1:
+                    json_file.write(json_object)
+                    line_number += 1
 
-                json_file.write("\n" + json_object)
+                else:
+                    json_file.write("\n" + json_object)
+                    line_number += 1
