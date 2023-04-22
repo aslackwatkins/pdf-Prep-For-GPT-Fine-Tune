@@ -3,3 +3,5 @@ text_data/
 pdf_data/
 .DS_Store
 prev_main.py
+training_data.jsonl
+training_data.txt
