@@ -49,17 +49,23 @@ for name in pdf_file_name_list:
 
         prepared_dictionaries.append(current_dictionary)
 
-
     with open("training_data.JSONL", "a") as json_file:
         line_number = 1
 
         for item in prepared_dictionaries:
             json_object = json.dumps(item)
-            
+
             if line_number == 1:
                 json_file.write(json_object)
                 line_number += 1
 
             else:
-                json_file.write("\n" + json_object)
+                json_file.write("\n")
+                json_file.write(json_object)
                 line_number += 1
+
+#To-Do's
+    #Still can't figure out how to remove the unicode characters
+    #Currently trying to write them to a text file then replace them with nothing, but that isn't working
+    #i think because every time python grabs it as a string it becomes unicode again
+    #i need to grab it when it's still text and replace it

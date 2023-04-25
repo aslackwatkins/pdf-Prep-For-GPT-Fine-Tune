@@ -155,14 +155,14 @@ class DocData():
 
             for x in x_sorted_data[1:]:
 
-                if (x - x_lists[-1][-1]) / x_stdev > 1:
+                if (x - x_lists[-1][-1]) / x_stdev > 0.5:
                     x_lists.append([])
 
                 x_lists[-1].append(x)
         else:
             x_lists = [[0.0]]
         
-        self.x_tolerance = x_lists[0][0]
+        self.x_tolerance = x_lists[0][-1]
 
         if len(y_gaps) > 1 and mean(y_gaps) != 0:
             y_stdev = stdev(y_gaps)
@@ -170,14 +170,14 @@ class DocData():
 
             for y in y_sorted_data[1:]:
 
-                if (y - y_lists[-1][-1]) / y_stdev > 1:
+                if (y - y_lists[-1][-1]) / y_stdev > 0.5:
                     y_lists.append([])
 
                 y_lists[-1].append(y)
         else:
             y_lists = [[0.0]]
         
-        self.y_tolerance = y_lists[0][0]
+        self.y_tolerance = y_lists[0][-1]
 
 
     def get_text(self):
@@ -204,21 +204,59 @@ class DocData():
 
         for num in range(self.starting_page, self.doc_length):
             self.text_dict[num].replace("", "")
-            encoded = codecs.encode(self.text_dict[num], "utf-8", errors="ignore")
-            decoded = codecs.decode(encoded, "utf-8", errors="ignore")
-            replaced = decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
-            self.text_dict[num] = replaced
 
-            if num in self.titles_dict:
-                title_encoded = codecs.encode(self.titles_dict[num], "utf-8", errors="ignore")
-                title_decoded = codecs.decode(title_encoded, "utf-8", errors="ignore")
-                title_replaced = title_decoded.replace(r"\\u[e-f][0-9a-z]{3}", "")
-                regularex = re.finditer(r"\\w[.]\\s", title_replaced)
-                for item in regularex:
-                    span = item.span()
-                    text = title_replaced[span[0],span[1]]
-                    title_replaced.replace(text, "")
-                self.titles_dict[num] = title_replaced
+        title_keys_list = [key for key in self.titles_dict.keys()]
+        text_keys_list = [key for key in self.text_dict.keys()]
+        file_titles = ""
+        file_text = ""
+
+        with open(f"{self.file_name}_titles.txt", "a") as titles_txt:
+            line_number = 1
+            for key in title_keys_list:
+                if line_number == 1:
+                    current_text = self.titles_dict[key].encode(encoding='ascii', errors='ignore')
+                    titles_txt.write(current_text.decode())
+                    line_number += 1
+                
+                else:
+                    current_text = self.titles_dict[key].encode(encoding='ascii', errors='ignore')
+                    titles_txt.write("\n")
+                    titles_txt.write(current_text.decode())
+                    line_number += 1
+
+        with open(f"{self.file_name}_text.txt", "a") as text_txt:
+            line_number = 1
+            for key in text_keys_list:
+                if line_number == 1:
+                    current_text = self.text_dict[key].encode(encoding='ascii', errors='ignore')
+                    text_txt.write(current_text.decode())
+                    line_number += 1
+                
+                else:
+                    current_text = self.text_dict[key].encode(encoding='ascii', errors='ignore')
+                    text_txt.write("\n")
+                    text_txt.write(current_text.decode())
+                    line_number += 1
+        with open(f"{self.file_name}_titles.txt", "r") as titles_txt:
+            file_titles = titles_txt.read()
+
+        with open(f"{self.file_name}_text.txt", "r") as text_txt:
+            file_text = text_txt.read()
+
+        with open(f"{self.file_name}_titles.txt", "r") as titles_txt:
+            title_num = 0
+
+            for title in titles_txt:
+                self.titles_dict[title_keys_list[title_num]] = title
+                title_num += 1
+
+        with open(f"{self.file_name}_text.txt", "r") as text_txt:
+            text_num = 0
+
+            for text in text_txt:
+                self.text_dict[text_keys_list[text_num]] = text
+
+        
 
 
     def return_text(self):
