@@ -1,8 +1,8 @@
 import os
-import math
 import pdfplumber
-import codecs
-import re
+import string
+import pandas as pd
+import numpy as np
 
 from statistics import stdev, mean
 
@@ -24,21 +24,32 @@ def get_file_names():
 
 class DocData():
     
-    def __init__(self,file_name,starting_page,pdf_directory):
+    def __init__(self,file_name,starting_page,pdf_directory,csv_directory):
         self.file_name = file_name
         self.pdf_directory = pdf_directory
         self.pdf = pdfplumber.open(self.pdf_directory + "/" + self.file_name)
         self.starting_page = starting_page
         self.doc_length = len(self.pdf.pages)
         self.metadata = self.pdf.metadata
+        self.csv_directory = csv_directory
 
-        self.title_font = []
+        self.title_size = []
         self.font_dict_sizes = {}
         self.font_dict_occurances = {}
         self.titles_dict = {}
 
         self.y_tolerance_list = []
         self.x_tolerance_list = []
+        self.page_list = []
+        self.font_list = []
+        self.size_list = []
+        self.text_list = []
+        self.adv_list = []
+        self.y0_list = []
+        self.y1_list = []
+        self.x0_list = []
+        self.x1_list = []
+        self.matrix_list = []
         self.y_tolerance = 0
         self.x_tolerance = 0
         self.text_dict = {}
@@ -60,11 +71,48 @@ class DocData():
                 if last_x1 == 0.0 or last_doctop == 0.0:
                     last_x1 = item['x1']
                     last_doctop = item['doctop']
+                    self.y_tolerance_list.append(0.0)
+                    self.x_tolerance_list.append(0.0)
+                    self.page_list.append(item['page_number'])
+                    self.font_list.append(item['fontname'])
+                    self.size_list.append(item['size'])
+                    self.text_list.append(item['text'])
+                    self.adv_list.append(item['adv'])
+                    self.y0_list.append(item['y0'])
+                    self.x0_list.append(item['x0'])
+                    self.y1_list.append(item['y1'])
+                    self.x1_list.append(item['x1'])
+                    self.matrix_list.append(item['matrix'])
 
                 else:
                     self.y_tolerance_list.append(abs(item['doctop'] - last_doctop))
                     self.x_tolerance_list.append(abs(item['x0'] - last_x1))
+                    self.page_list.append(item['page_number'])
+                    self.font_list.append(item['fontname'])
+                    self.size_list.append(item['size'])
+                    self.text_list.append(item['text'])
+                    self.adv_list.append(item['adv'])
+                    self.y0_list.append(item['y0'])
+                    self.x0_list.append(item['x0'])
+                    self.y1_list.append(item['y1'])
+                    self.x1_list.append(item['x1'])
+                    self.matrix_list.append(item['matrix'])
 
+    def to_csv(self):
+        new_dataframe = pd.DataFrame({'page_number': self.page_list, 
+                                      'y_diff': self.y_tolerance_list, 
+                                      'x_diff': self.x_tolerance_list,
+                                      'fontname': self.font_list,
+                                      'size': self.size_list,
+                                      'text': self.text_list,
+                                      'adv': self.adv_list,
+                                      'y0': self.y0_list,
+                                      'y1': self.y1_list,
+                                      'x0': self.x0_list,
+                                      'x1': self.x1_list,
+                                      'matrix': self.matrix_list})
+        
+        new_dataframe.to_csv(f'{self.csv_directory}{self.file_name}pdf_data.csv')
 
     def get_font_occurances(self):
 
@@ -80,47 +128,26 @@ class DocData():
     
 
     def get_title_fonts(self):
-        
-        font_keys_sorted = []
 
         #sorted large to small
         font_sizes = set(self.font_dict_sizes.values())
-        font_sizes_sorted = list(reversed(sorted(font_sizes)))
+        font_sizes_sorted = list((sorted(font_sizes)))
 
+        print(font_sizes_sorted)
 
-        for value in font_sizes_sorted:
-            sorted_key = [i for i in self.font_dict_sizes if self.font_dict_sizes[i] == value]
-            font_keys_sorted.extend(sorted_key)
+        array = np.array(font_sizes_sorted)
+        quantile = np.quantile(a=array, q=0.75)
 
-        title_approved = []
+        if array.size < 4:
+            self.title_size.append(array[-1])
+            print(f"Less than 4: {self.file_name}")
 
-        for title_key in font_keys_sorted:
-            if len(self.font_dict_occurances[title_key]) >= (self.doc_length / 10):
-                title_approved.append(True)
+        else:
+            for size in array:
+                if size > quantile:
+                    self.title_size.append(size)
 
-        font_size_occurance_count = 0
-
-        for num in range(0, len(title_approved)):
-            if title_approved[num] == True:
-                current_size = font_sizes_sorted[num]
-                current_fonts = [i for i in self.font_dict_sizes if self.font_dict_sizes[i] == current_size]
-
-                font_size_occurance_count = len(current_fonts)
-
-                if font_size_occurance_count == 1:
-                    self.title_font.append(font_keys_sorted[num])
-                    break
-                
-                else:
-                    occurances = []
-
-                    for o in range(0, font_size_occurance_count):
-                        occurances.append(len(self.font_dict_occurances[font_keys_sorted[o]]))
-
-                    index = occurances.index(max(occurances))
-
-                    self.title_font.append(font_keys_sorted[index])
-                    break
+                    print(f"Greater than 4 {self.file_name}")
 
 
     def get_titles(self):
@@ -129,7 +156,7 @@ class DocData():
             current_page = self.pdf.pages[num].chars
 
             for item in current_page:
-                if item['fontname'] in self.title_font:
+                if item['size'] in self.title_size:
 
                     if item['page_number'] in self.titles_dict:
                         self.titles_dict[item['page_number']] += item['text']
@@ -207,8 +234,6 @@ class DocData():
 
         title_keys_list = [key for key in self.titles_dict.keys()]
         text_keys_list = [key for key in self.text_dict.keys()]
-        file_titles = ""
-        file_text = ""
 
         with open(f"{self.file_name}_titles.txt", "a") as titles_txt:
             line_number = 1
@@ -229,6 +254,7 @@ class DocData():
             for key in text_keys_list:
                 if line_number == 1:
                     current_text = self.text_dict[key].encode(encoding='ascii', errors='ignore')
+                    print(current_text)
                     text_txt.write(current_text.decode())
                     line_number += 1
                 
@@ -237,24 +263,23 @@ class DocData():
                     text_txt.write("\n")
                     text_txt.write(current_text.decode())
                     line_number += 1
-        with open(f"{self.file_name}_titles.txt", "r") as titles_txt:
-            file_titles = titles_txt.read()
-
-        with open(f"{self.file_name}_text.txt", "r") as text_txt:
-            file_text = text_txt.read()
 
         with open(f"{self.file_name}_titles.txt", "r") as titles_txt:
             title_num = 0
 
             for title in titles_txt:
-                self.titles_dict[title_keys_list[title_num]] = title
+                current_string = title.replace('\n', '')
+                printable = set(string.printable)
+                self.titles_dict[title_keys_list[title_num]] = ''.join(filter(lambda x: x in printable, current_string))
                 title_num += 1
 
         with open(f"{self.file_name}_text.txt", "r") as text_txt:
             text_num = 0
 
             for text in text_txt:
-                self.text_dict[text_keys_list[text_num]] = text
+                current_string = text.replace('\n','')
+                printable = set(string.printable)
+                self.text_dict[text_keys_list[text_num]] = ''.join(filter(lambda x: x in printable, current_string))
 
         
 

@@ -5,6 +5,9 @@ pdf_data/
 prev_main.py
 training_data.jsonl
 training_data.txt
+.env
+training_data_prepared.jsonl
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

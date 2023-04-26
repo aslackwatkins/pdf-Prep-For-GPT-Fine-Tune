@@ -1,5 +1,4 @@
-import json
-import codecs
+import jsonlines
 
 from classes_and_functions import get_file_names, DocData
 
@@ -10,11 +9,13 @@ pdf_file_name_list = get_file_names()
 starting_page = cst.STARTING_PAGE_OF_CONTENT
 directory = cst.PDF_DIRECTORY
 org_name = cst.NAME_OF_ORG
+csv_directory = cst.CSV_DIRECTORY
+open_api_key = cst.OPEN_AI_API_KEY
 
 
 for name in pdf_file_name_list:
     
-    doc_data = DocData(name, starting_page, directory)
+    doc_data = DocData(name, starting_page, directory, csv_directory)
 
     doc_data.get_char_data()
 
@@ -40,32 +41,18 @@ for name in pdf_file_name_list:
         current_dictionary = {"prompt": "", "completion": ""}
         
         if len(item[0]) < 4:
-            current_dictionary["prompt"] += f"What did {org_name} give as their policy position in their {name} document?"
+            current_dictionary["prompt"] = f"What did {org_name} give as their policy position in their {name} document?"
         
         else:
-            current_dictionary["prompt"] += f"What did {org_name} give as their policy position on {item[0]} in their {name} document?"
+            current_dictionary["prompt"] = f"What did {org_name} give as their policy position on {item[0]} in their {name} document?"
 
-        current_dictionary["completion"] += item[1]
+        current_dictionary["completion"] = item[1]
 
         prepared_dictionaries.append(current_dictionary)
 
-    with open("training_data.JSONL", "a") as json_file:
-        line_number = 1
+    with jsonlines.open("training_data.JSONL", "a") as json_file:
 
         for item in prepared_dictionaries:
-            json_object = json.dumps(item)
 
-            if line_number == 1:
-                json_file.write(json_object)
-                line_number += 1
+            json_file.write(item)
 
-            else:
-                json_file.write("\n")
-                json_file.write(json_object)
-                line_number += 1
-
-#To-Do's
-    #Still can't figure out how to remove the unicode characters
-    #Currently trying to write them to a text file then replace them with nothing, but that isn't working
-    #i think because every time python grabs it as a string it becomes unicode again
-    #i need to grab it when it's still text and replace it
